@@ -170,8 +170,13 @@ public class InitDestroyAnnotationBeanPostProcessor implements DestructionAwareB
 		return null;
 	}
 
+	/*
+	解析this.initAnnotationType, this.destroyAnnotationType标注的方法
+	 */
 	private LifecycleMetadata findInjectionMetadata(RootBeanDefinition beanDefinition, Class<?> beanType) {
 		LifecycleMetadata metadata = findLifecycleMetadata(beanType);
+		//将解析到的方法注册到beanDefinition中
+		//如果beanDefinition已经注册，则checkedInitMethods不会添加，将不会执行该方法
 		metadata.checkConfigMembers(beanDefinition);
 		return metadata;
 	}

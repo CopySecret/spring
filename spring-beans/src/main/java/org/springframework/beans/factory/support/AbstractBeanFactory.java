@@ -963,6 +963,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	BeanPostProcessorCache getBeanPostProcessorCache() {
 		BeanPostProcessorCache bppCache = this.beanPostProcessorCache;
+		if (bppCache == null){
+			System.out.println("-----");
+		}
 		if (bppCache == null) {
 			bppCache = new BeanPostProcessorCache();
 			for (BeanPostProcessor bpp : this.beanPostProcessors) {

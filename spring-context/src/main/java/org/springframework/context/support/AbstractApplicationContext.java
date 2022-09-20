@@ -549,20 +549,53 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			// Prepare this context for refreshing.
 			prepareRefresh();
 
+			/*
+			对于Xml方式启动来说，这里会加载BeanDefinition
+			对于配置类方式启动，这里不会加载BeanDefinition，只是设置了id，标志BeanFactory已经刷新
+			 */
 			// Tell the subclass to refresh the internal bean factory.
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
+			/*
+			使用new方式注册了BeanPostProcessor：
+				1，ApplicationContextAwareProcessor，用来处理Bean定义的各种环境Aware接口
+				2，ApplicationListenerDetector
+			 */
 			// Prepare the bean factory for use in this context.
 			prepareBeanFactory(beanFactory);
 
 			try {
+				/*
+				扩展Spring框架时，可以重写这个类，注册自定义的BeanFactoryPostProcessor
+				 */
 				// Allows post-processing of the bean factory in context subclasses.
 				postProcessBeanFactory(beanFactory);
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
+				/*
+				注册了：ImportAwareBeanPostProcessor
+				对于配置类启动，这里会加载BeanDefinition
+				 */
 				// Invoke factory processors registered as beans in the context.
 				invokeBeanFactoryPostProcessors(beanFactory);
 
+				/*
+				注册BeanDefinition重的BeanPostProcessor:
+					1，new方式注册BeanPostProcessorChecker
+					2，AutowiredAnnotationBeanPostProcessor 属性注入
+					3，InitDestroyAnnotationBeanPostProcessor 处理@PostConstruct, @PreDestroy
+				    4,先注册实现了PriorityOrdered接口的BeanPostProcessor
+					5,在注册实现了Ordered接口的BeanPostProcessor
+					6,注册普通的BeanProcessor
+					7,再注册实现了MergedBeanDefinitionPostProcessor接口的BeanPostProcessor  这一步估计是为了防止自定义的BeanPostProcessor把MergedBeanDefinitionPostProcessor处理过的重新置空，所以要最后执行
+
+					8,new 方式重新注册ApplicationListenerDetector
+					9,至此,所有BeanPostProcessor注册完毕
+				注意：1，重复的BeanPostProcessor会覆盖掉前面的
+					 2，AutowiredAnnotationBeanPostProcessor，InitDestroyAnnotationBeanPostProcessor实现了PriorityOrdered和MergedBeanDefinitionPostProcessor接口
+					 3，因此第二点的两个BeanPostProcessor会优先注册，是因为我们自定义的PostProcessor也可能需要依赖注入和@@PostConstruct, @PreDestroy
+					    需要先注册这两个来处理
+				 */
 				// Register bean processors that intercept bean creation.
 				registerBeanPostProcessors(beanFactory);
 				beanPostProcess.end();
@@ -579,6 +612,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				// Check for listener beans and register them.
 				registerListeners();
 
+				/*
+				CommonAnnotationBeanPostProcessor处理@Resource注入
+				AutowiredAnnotationBeanPostProcessor处理@Autowired和@Inject
+				 */
 				// Instantiate all remaining (non-lazy-init) singletons.
 				finishBeanFactoryInitialization(beanFactory);
 
@@ -686,6 +723,17 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
+		/*
+		对于autowireMode != 0的BeanDefinition，Spring会根据setter方法自动注入，
+		注入时将忽略：
+			1，beanFactory.ignoreDependencyInterface()所设置的所有接口的方法
+			2，beanFactory.ignoreDependencyType()所设置的所有类
+		如：
+		beanFactory.ignoreDependencyInterface(ApplicationContextAware.class);
+			当Bean定义实现了ApplicationContextAware接口，且autowireMode != 0 时，Spring实例化该bean时，将忽略setApplicationContext()方法；
+		beanFactory.ignoreDependencyType(Environment.class);
+			当Bean定义中Environment，且autowireMode != 0，Spring实例化该bean时，将忽略Environment的注入
+		 */
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);

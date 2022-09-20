@@ -1,5 +1,4 @@
 description = "Spring Instrument"
-
 jar {
 	manifest.attributes["Premain-Class"] =
 			"org.springframework.instrument.InstrumentationSavingAgent"

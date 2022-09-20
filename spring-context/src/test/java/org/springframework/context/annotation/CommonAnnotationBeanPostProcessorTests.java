@@ -16,14 +16,11 @@
 
 package org.springframework.context.annotation;
 
-import java.util.Properties;
-
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import jakarta.ejb.EJB;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanFactory;
@@ -42,6 +39,8 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.context.testfixture.jndi.ExpectedLookupTemplate;
 import org.springframework.core.testfixture.io.SerializationTestUtils;
 import org.springframework.jndi.support.SimpleJndiBeanFactory;
+
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

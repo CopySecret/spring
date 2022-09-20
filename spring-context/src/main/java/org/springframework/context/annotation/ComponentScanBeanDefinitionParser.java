@@ -87,7 +87,8 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 
 		// Actually scan for bean definitions and register them.
 		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
-		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
+		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);//扫描注册包下定义的Bean
+		//注册注解驱动需要的BeanDefinition
 		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
 
 		return null;

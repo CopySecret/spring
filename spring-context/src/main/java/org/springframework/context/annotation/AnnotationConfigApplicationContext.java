@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.context.event.EventListener;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.metrics.StartupStep;
@@ -65,7 +66,18 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
 	public AnnotationConfigApplicationContext() {
+		/*
+		这里的隐式调用GenericApplicationContext构造方法实例化了BeanFactory
+		GenericApplicationContext.GenericApplicationContext()
+		 */
 		StartupStep createAnnotatedBeanDefReader = this.getApplicationStartup().start("spring.context.annotated-bean-reader.create");
+		/*
+		这里会调用getOrCreateEnvironment，并注册注解启动需要的BeanDefinition:
+		ConfigurationClassPostProcessor    这个用来注册自定义BeanDefinition
+		AutowiredAnnotationBeanPostProcessor
+		EventListenerMethodProcessor
+		DefaultEventListenerFactory
+		 */
 		this.reader = new AnnotatedBeanDefinitionReader(this);
 		createAnnotatedBeanDefReader.end();
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
@@ -88,7 +100,15 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * {@link Configuration @Configuration} classes
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
+		/*
+		这里创建了Environment，BeanFactory，设置BeanDefinitionReader和BeanDefinitionScanner，并注册了以下4个BeanDefinition
+				ConfigurationClassPostProcessor    这个用来注册自定义BeanDefinition
+				AutowiredAnnotationBeanPostProcessor
+				EventListenerMethodProcessor
+				DefaultEventListenerFactory
+		 */
 		this();
+		//注册传入的配置类的BeanDefinition到IOC中
 		register(componentClasses);
 		refresh();
 	}
